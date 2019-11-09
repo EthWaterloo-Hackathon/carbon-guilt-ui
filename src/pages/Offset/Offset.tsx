@@ -18,8 +18,9 @@ export const Offset: React.FC = () => {
   const snapId = `wallet_plugin_${origin}`;
 
   const [offsetPercentage, setOffsetPercentage] = useState<number>(0);
-  const [footPrint, setFootPrint] = useState(1278);
+  const [footPrint, setFootPrint] = useState(0);
   const [beneficiary, setBeneficiary] = useState<OptionTypeBase>();
+  const [offsetAmount, setOffsetAmount] = useState<number>();
 
   useEffect(() => {
     getAccumulatedGas();
@@ -35,6 +36,7 @@ export const Offset: React.FC = () => {
           }
         ]
       });
+      console.log(response);
       setFootPrint(response);
     } catch (err) {
       console.error(err);
@@ -42,17 +44,18 @@ export const Offset: React.FC = () => {
     }
   };
 
-  const send = async () => {
+  const reduceAccumulatedGas = async (amount: number) => {
     try {
       const response = await (window as any).ethereum.send({
         method: snapId,
         params: [
           {
-            method: 'hello'
+            method: 'reduceAccumulatedGas',
+            params: [amount]
           }
         ]
       });
-      console.log(response);
+      setFootPrint(response);
     } catch (err) {
       console.error(err);
       alert('Problem happened: ' + err.message || err);
@@ -72,7 +75,18 @@ export const Offset: React.FC = () => {
   };
 
   const formatNumber = (x: number) => {
+    if (!x) {
+      return 0;
+    }
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+
+  const sendOffset = async () => {
+    // Send the eth to the proxy
+
+    // Reduce the amount of accumelated Gas
+    const reduceResult = await reduceAccumulatedGas(5000);
+    console.log(reduceResult);
   };
 
   return (
@@ -185,8 +199,30 @@ export const Offset: React.FC = () => {
           />
         </Box>
       </Box>
+      <Box mt={styles.space[5]}>
+        <Box>
+          <Text color={styles.colors.gray[3]} fontSize={styles.fontSizes[2]}>
+            You are sending:
+          </Text>
+        </Box>
+        <Box mt={styles.space[3]}>
+          <Flex flexDirection="row" alignItems="baseline">
+            <Text color={styles.colors.gray[3]} fontSize={styles.fontSizes[8]}>
+              {offsetAmount ? offsetAmount : '-'}
+            </Text>
+            <Box ml={styles.space[2]}>
+              <Text
+                color={styles.colors.gray[3]}
+                fontSize={styles.fontSizes[2]}
+              >
+                ETH
+              </Text>
+            </Box>
+          </Flex>
+        </Box>
+      </Box>
       <Box mt={styles.space[3]}>
-        <Button>Send</Button>
+        <Button onClick={sendOffset}>Send</Button>
       </Box>
     </Box>
   );
