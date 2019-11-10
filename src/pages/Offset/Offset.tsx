@@ -24,7 +24,7 @@ export const Offset: React.FC = () => {
   const snapId = `wallet_plugin_${origin}`;
 
   const [offsetPercentage, setOffsetPercentage] = useState<number>(0);
-  const [footPrint, setFootPrint] = useState(20000);
+  const [footPrint, setFootPrint] = useState(23217);
   const [beneficiary, setBeneficiary] = useState<OptionTypeBase>();
   const [offsetAmount, setOffsetAmount] = useState<number>(0);
   const [modalOpen, setModalOpen] = useState(false);
