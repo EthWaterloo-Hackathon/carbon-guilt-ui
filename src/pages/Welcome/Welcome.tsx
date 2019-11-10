@@ -22,6 +22,7 @@ export const Welcome: React.FC<Props> = props => {
       method: 'wallet_requestPermissions',
       params: [
         {
+          eth_accounts: {},
           [snapId]: {}
         }
       ]

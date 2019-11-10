@@ -8,6 +8,9 @@ import 'rc-slider/assets/index.css';
 import logo from '../../assets/footPrint.svg';
 import info from '../../assets/info.svg';
 import leaf from '../../assets/leaf.svg';
+import { offsetCarbonFootprint, getBenneficiaries } from '../../sdk';
+import BN from 'bignumber.js';
+// import { web3 } from '../../sdk/web3';
 
 export const Offset: React.FC = () => {
   const options = [
@@ -28,7 +31,13 @@ export const Offset: React.FC = () => {
 
   useEffect(() => {
     getAccumulatedGas();
+    retrieveBeneficiaries();
   }, []);
+
+  const retrieveBeneficiaries = async () => {
+    const beneficiaries = await getBenneficiaries();
+    console.log(beneficiaries);
+  };
 
   const getAccumulatedGas = async () => {
     try {
@@ -85,8 +94,16 @@ export const Offset: React.FC = () => {
   };
 
   const sendOffset = async () => {
+    console.log('sending');
+    console.log(new BN(0.1));
+    // getBenneficiaries();
     // Send the eth to the proxy
-
+    // const sendResult = await offsetCarbonFootprint(
+    //   web3.utils.toHex('test'), //'0x72D25e051a1efd76F02D7b4bDE68Ae74F03f5bF7',
+    //   '0.1'
+    // );
+    // getBenneficiaries();
+    // console.log(web3.version);
     // Reduce the amount of accumelated Gas
     const reduceResult = await reduceAccumulatedGas(5000);
     setFootPrint(reduceResult);
