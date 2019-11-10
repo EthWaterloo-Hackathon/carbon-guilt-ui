@@ -30,6 +30,7 @@ export const Offset: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [tokensGained, setTokensGained] = useState(0);
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     getAccumulatedGas();
@@ -111,12 +112,27 @@ export const Offset: React.FC = () => {
     if (!x) {
       return 0;
     }
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return x
+      .toFixed(2)
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+
+  const formatNumber2 = (x: number) => {
+    if (!x) {
+      return 0;
+    }
+    return x
+      .toFixed(3)
+
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
 
   const sendOffset = async () => {
     // Send the eth to the proxy
     if (beneficiary) {
+      setIsLoading(true);
       const sendResult = await offsetCarbonFootprint(
         web3.utils.toHex(beneficiary.ens), //'0x72D25e051a1efd76F02D7b4bDE68Ae74F03f5bF7',
         offsetAmount.toString()
@@ -126,10 +142,11 @@ export const Offset: React.FC = () => {
       const reduceResult = await reduceAccumulatedGas(
         sendResult.offsettedCarbon
       );
-      setFootPrint(reduceResult);
+      setFootPrint(footPrint - (offsetPercentage * footPrint) / 100);
       setTokensGained(sendResult.aquiredTokens);
       setModalOpen(true);
       setOffsetPercentage(0);
+      setIsLoading(false);
     }
   };
 
@@ -312,7 +329,12 @@ export const Offset: React.FC = () => {
           </Box>
         </Box>
         <Box mt={styles.space[3]}>
-          <Button onClick={sendOffset}>Send</Button>
+          {!isLoading && <Button onClick={sendOffset}>Send</Button>}
+          {isLoading && (
+            <Text color={styles.colors.main} fontSize={styles.fontSizes[3]}>
+              Processing...
+            </Text>
+          )}
         </Box>
       </Box>
     </Fragment>

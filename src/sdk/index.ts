@@ -277,7 +277,8 @@ export const offsetCarbonFootprint = async (to: string, ethAmount: string) => {
     receipt.events.GuiltAlleviated.returnValues._tonnes as string,
     'ether'
   );
-  const gas = receipt.events.GuiltAlleviated.returnValues._tonnes;
+  const gas = receipt.events.GuiltAlleviated.returnValues._gas;
+  console.log('GAS', gas);
   return {
     aquiredTokens: tonnes,
     offsettedCarbon: web3.utils.fromWei(gas, 'ether')
