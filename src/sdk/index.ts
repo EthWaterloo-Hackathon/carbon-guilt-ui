@@ -1,12 +1,13 @@
 import BN from 'bignumber.js';
-// import { web3 } from './web3';
+import { web3 } from './web3';
+// import { AbiItem } from 'web3';
 
-import { AbiItem } from 'web3-utils';
+// import { AbiItem } from 'web3-utils';
 
-const web3 = (window as any).web3;
+// const web3 = (window as any).web3;
 
 async function contractAddress() {
-  return '0x05b3d197670C6725597f0D424e1037412B745718';
+  return '0x1C3A2Ea86a8a77d8De4E411F3a35C3e931813F76';
   // const chainId = 3; //await web3.eth.getChainId();
   // switch (chainId) {
   //   case 3:
@@ -18,7 +19,7 @@ async function contractAddress() {
   // }
 }
 
-const contractABI: AbiItem[] = [
+const contractABI = [
   {
     constant: true,
     inputs: [],
@@ -254,12 +255,12 @@ export const offsetCarbonFootprint = async (to: string, ethAmount: string) => {
   console.log(web3.version);
   console.log('ADDRESS', accounts);
   await registryContract.methods.offsetCarbonFootprint(to).send({
-    from: accounts[0],
-    value: web3.utils.toWei(ethAmount.toString())
+    from: '0xDD855Cf04253B58f084Dfb96f6d05C4dB64069D2', //accounts[0],
+    value: web3.utils.toWei(ethAmount.toString(), 'ether')
   });
 };
 
-const registryABI: AbiItem[] = [
+const registryABI = [
   {
     constant: false,
     inputs: [],
@@ -442,25 +443,32 @@ const registryABI: AbiItem[] = [
 ];
 
 export const getBenneficiaries = async () => {
-  const offsetContract = new web3.eth.contract(
+  const offsetContract = new web3.eth.Contract(
     contractABI,
     await contractAddress()
   );
+  console.log('Contract', offsetContract);
+  // console.log(web3.version);
   const beneficiaryContractAddress = await offsetContract.methods
     .registry()
     .call();
-  const registryContract = new web3.eth.contract(
+  const registryContract = new web3.eth.Contract(
     registryABI,
     beneficiaryContractAddress
   );
-  const allBeneficiaries = await registryContract.methods.getAllBeneficiaries.call();
-  let result = [];
-  for (let i = 0; i < allBeneficiaries[0].length; i++) {
-    result.push({
-      name: web3.utils.hexToUtf8(allBeneficiaries[i][0]),
-      wallet: allBeneficiaries[i][1],
-      ens: web3.utils.hexToUtf8(allBeneficiaries[i][2])
-    });
-  }
-  return result;
+  //console.log(registryContract);
+  const beneficiary = await registryContract.methods
+    .getBeneficiary(
+      '0x7361766565617274682e6f726700000000000000000000000000000000000000'
+    )
+    .call();
+  return [
+    {
+      name: web3.utils.hexToUtf8(beneficiary[0]),
+      wallet: beneficiary[1],
+      ens: web3.utils.hexToUtf8(
+        '0x7361766565617274682e6f726700000000000000000000000000000000000000'
+      )
+    }
+  ];
 };

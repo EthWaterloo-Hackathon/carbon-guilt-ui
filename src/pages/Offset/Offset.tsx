@@ -10,15 +10,15 @@ import info from '../../assets/info.svg';
 import leaf from '../../assets/leaf.svg';
 import { offsetCarbonFootprint, getBenneficiaries } from '../../sdk';
 import BN from 'bignumber.js';
-// import { web3 } from '../../sdk/web3';
+import { web3 } from '../../sdk/web3';
+
+interface Beneficiary {
+  name: string;
+  wallet: any;
+  ens: string;
+}
 
 export const Offset: React.FC = () => {
-  const options = [
-    { value: 'chocolate', label: 'Chocolate' },
-    { value: 'strawberry', label: 'Strawberry' },
-    { value: 'vanilla', label: 'Vanilla' }
-  ];
-
   const origin = new URL('package.json', 'http://localhost:8081/').toString();
   const snapId = `wallet_plugin_${origin}`;
 
@@ -28,6 +28,7 @@ export const Offset: React.FC = () => {
   const [offsetAmount, setOffsetAmount] = useState<number>();
   const [modalOpen, setModalOpen] = useState(false);
   const [tokensGained, setTokensGained] = useState(0);
+  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
 
   useEffect(() => {
     getAccumulatedGas();
@@ -35,8 +36,16 @@ export const Offset: React.FC = () => {
   }, []);
 
   const retrieveBeneficiaries = async () => {
-    const beneficiaries = await getBenneficiaries();
-    console.log(beneficiaries);
+    const bnfs = await getBenneficiaries();
+    setBeneficiaries(bnfs);
+  };
+
+  const getBeneficiaryOptions = () => {
+    return beneficiaries.map(b => ({
+      value: b.wallet,
+      label: b.name,
+      ens: b.ens
+    }));
   };
 
   const getAccumulatedGas = async () => {
@@ -94,21 +103,23 @@ export const Offset: React.FC = () => {
   };
 
   const sendOffset = async () => {
-    console.log('sending');
-    console.log(new BN(0.1));
+    console.log('sending to ', beneficiary);
+
+    // console.log(new BN(0.1));
     // getBenneficiaries();
     // Send the eth to the proxy
-    // const sendResult = await offsetCarbonFootprint(
-    //   web3.utils.toHex('test'), //'0x72D25e051a1efd76F02D7b4bDE68Ae74F03f5bF7',
-    //   '0.1'
-    // );
-    // getBenneficiaries();
-    // console.log(web3.version);
-    // Reduce the amount of accumelated Gas
-    const reduceResult = await reduceAccumulatedGas(5000);
-    setFootPrint(reduceResult);
-    setTokensGained(5);
-    setModalOpen(true);
+    if (beneficiary) {
+      const sendResult = await offsetCarbonFootprint(
+        web3.utils.toHex(beneficiary.ens), //'0x72D25e051a1efd76F02D7b4bDE68Ae74F03f5bF7',
+        '1.0'
+      );
+      // console.log(web3.version);
+      // Reduce the amount of accumelated Gas
+      const reduceResult = await reduceAccumulatedGas(5000);
+      setFootPrint(reduceResult);
+      setTokensGained(5);
+      setModalOpen(true);
+    }
   };
 
   const closeModal = () => {
@@ -260,7 +271,7 @@ export const Offset: React.FC = () => {
             <Select
               value={beneficiary}
               onChange={onBeneficiarySelected}
-              options={options}
+              options={getBeneficiaryOptions()}
             />
           </Box>
         </Box>
