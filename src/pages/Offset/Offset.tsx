@@ -16,6 +16,7 @@ interface Beneficiary {
   name: string;
   wallet: any;
   ens: string;
+  rate: number;
 }
 
 export const Offset: React.FC = () => {
@@ -23,9 +24,9 @@ export const Offset: React.FC = () => {
   const snapId = `wallet_plugin_${origin}`;
 
   const [offsetPercentage, setOffsetPercentage] = useState<number>(0);
-  const [footPrint, setFootPrint] = useState(0);
+  const [footPrint, setFootPrint] = useState(20000);
   const [beneficiary, setBeneficiary] = useState<OptionTypeBase>();
-  const [offsetAmount, setOffsetAmount] = useState<number>();
+  const [offsetAmount, setOffsetAmount] = useState<number>(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [tokensGained, setTokensGained] = useState(0);
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
@@ -44,51 +45,62 @@ export const Offset: React.FC = () => {
     return beneficiaries.map(b => ({
       value: b.wallet,
       label: b.name,
-      ens: b.ens
+      ens: b.ens,
+      rate: b.rate
     }));
   };
 
   const getAccumulatedGas = async () => {
-    try {
-      const response = await (window as any).ethereum.send({
-        method: snapId,
-        params: [
-          {
-            method: 'getAccumulatedGas'
-          }
-        ]
-      });
-      setFootPrint(response);
-    } catch (err) {
-      console.error(err);
-      alert('Problem happened: ' + err.message || err);
-    }
+    // try {
+    //   const response = await (window as any).ethereum.send({
+    //     method: snapId,
+    //     params: [
+    //       {
+    //         method: 'getAccumulatedGas'
+    //       }
+    //     ]
+    //   });
+    //   setFootPrint(response);
+    // } catch (err) {
+    //   console.error(err);
+    //   alert('Problem happened: ' + err.message || err);
+    // }
   };
 
   const reduceAccumulatedGas = async (amount: number) => {
-    try {
-      const response = await (window as any).ethereum.send({
-        method: snapId,
-        params: [
-          {
-            method: 'reduceAccumulatedGas',
-            params: [amount]
-          }
-        ]
-      });
-      return response;
-    } catch (err) {
-      console.error(err);
-      alert('Problem happened: ' + err.message || err);
-    }
+    // try {
+    //   const response = await (window as any).ethereum.send({
+    //     method: snapId,
+    //     params: [
+    //       {
+    //         method: 'reduceAccumulatedGas',
+    //         params: [amount]
+    //       }
+    //     ]
+    //   });
+    //   return response;
+    // } catch (err) {
+    //   console.error(err);
+    //   alert('Problem happened: ' + err.message || err);
+    // }
+    return footPrint - amount;
   };
 
   const onBeneficiarySelected = (selectedOption: OptionTypeBase) => {
     setBeneficiary(selectedOption);
+
+    setOffsetAmount(
+      (selectedOption.rate * (offsetPercentage * footPrint)) / 100000
+    );
   };
 
   const onSliderChange = (value: number) => {
     setOffsetPercentage(value);
+    if (beneficiary) {
+      setOffsetAmount(
+        (beneficiary.rate * (offsetPercentage * footPrint)) / 100000
+      );
+    }
   };
 
   const onAfterChange = (value: number) => {
@@ -103,22 +115,21 @@ export const Offset: React.FC = () => {
   };
 
   const sendOffset = async () => {
-    console.log('sending to ', beneficiary);
-
-    // console.log(new BN(0.1));
-    // getBenneficiaries();
     // Send the eth to the proxy
     if (beneficiary) {
       const sendResult = await offsetCarbonFootprint(
         web3.utils.toHex(beneficiary.ens), //'0x72D25e051a1efd76F02D7b4bDE68Ae74F03f5bF7',
-        '1.0'
+        offsetAmount.toString()
       );
-      // console.log(web3.version);
+      console.log(sendResult.offsettedCarbon);
       // Reduce the amount of accumelated Gas
-      const reduceResult = await reduceAccumulatedGas(5000);
+      const reduceResult = await reduceAccumulatedGas(
+        sendResult.offsettedCarbon
+      );
       setFootPrint(reduceResult);
-      setTokensGained(5);
+      setTokensGained(sendResult.aquiredTokens);
       setModalOpen(true);
+      setOffsetPercentage(0);
     }
   };
 

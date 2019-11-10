@@ -1,25 +1,25 @@
 import BN from 'bignumber.js';
 import { web3 } from './web3';
-// import { AbiItem } from 'web3';
-
-// import { AbiItem } from 'web3-utils';
-
-// const web3 = (window as any).web3;
 
 async function contractAddress() {
-  return '0x1C3A2Ea86a8a77d8De4E411F3a35C3e931813F76';
-  // const chainId = 3; //await web3.eth.getChainId();
-  // switch (chainId) {
-  //   case 3:
-  //     return '0x05b3d197670C6725597f0D424e1037412B745718';
-  //   case 15:
-  //     return '';
-  //   default:
-  //     throw new Error('Chain is not supported yed');
-  // }
+  return '0xdd82c733F148F7377e2873145A5D956bFbcc8767';
 }
 
 const contractABI = [
+  {
+    constant: true,
+    inputs: [],
+    name: 'totalContributions',
+    outputs: [
+      {
+        name: '',
+        type: 'uint256'
+      }
+    ],
+    payable: false,
+    stateMutability: 'view',
+    type: 'function'
+  },
   {
     constant: true,
     inputs: [],
@@ -60,6 +60,34 @@ const contractABI = [
   {
     constant: true,
     inputs: [],
+    name: 'oracle',
+    outputs: [
+      {
+        name: '',
+        type: 'address'
+      }
+    ],
+    payable: false,
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    constant: true,
+    inputs: [],
+    name: 'carbonEmissionsPerGasUnit',
+    outputs: [
+      {
+        name: '',
+        type: 'uint256'
+      }
+    ],
+    payable: false,
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    constant: true,
+    inputs: [],
     name: 'owner',
     outputs: [
       {
@@ -86,20 +114,6 @@ const contractABI = [
     type: 'function'
   },
   {
-    constant: true,
-    inputs: [],
-    name: 'carbonTonnagePerETH',
-    outputs: [
-      {
-        name: '',
-        type: 'uint256'
-      }
-    ],
-    payable: false,
-    stateMutability: 'view',
-    type: 'function'
-  },
-  {
     constant: false,
     inputs: [
       {
@@ -111,20 +125,6 @@ const contractABI = [
     outputs: [],
     payable: false,
     stateMutability: 'nonpayable',
-    type: 'function'
-  },
-  {
-    constant: true,
-    inputs: [],
-    name: 'ethOffset',
-    outputs: [
-      {
-        name: '',
-        type: 'uint256'
-      }
-    ],
-    payable: false,
-    stateMutability: 'view',
     type: 'function'
   },
   {
@@ -150,11 +150,32 @@ const contractABI = [
       {
         name: '_registry',
         type: 'address'
+      },
+      {
+        name: '_oracle',
+        type: 'address'
       }
     ],
     payable: false,
     stateMutability: 'nonpayable',
     type: 'constructor'
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        name: '_tonnes',
+        type: 'uint256'
+      },
+      {
+        indexed: true,
+        name: '_gas',
+        type: 'uint256'
+      }
+    ],
+    name: 'GuiltAlleviated',
+    type: 'event'
   },
   {
     anonymous: false,
@@ -206,6 +227,10 @@ const contractABI = [
       {
         name: '_wallet',
         type: 'address'
+      },
+      {
+        name: '_giftPrice',
+        type: 'uint256'
       }
     ],
     name: 'addBeneficiary',
@@ -215,52 +240,70 @@ const contractABI = [
     type: 'function'
   },
   {
-    constant: false,
-    inputs: [
+    constant: true,
+    inputs: [],
+    name: 'getCarbonEmissionsPerGasUnit',
+    outputs: [
       {
-        name: '_rate',
+        name: '_emissions',
         type: 'uint256'
       }
     ],
-    name: 'setCarbonTonnagePerETH',
-    outputs: [
-      {
-        name: '',
-        type: 'bool'
-      }
-    ],
     payable: false,
-    stateMutability: 'nonpayable',
+    stateMutability: 'view',
     type: 'function'
   }
 ];
 
 export const offsetCarbonFootprint = async (to: string, ethAmount: string) => {
-  console.log('START');
-  // const beneficiaryAddress = to.startsWith('0x')
-  //   ? to
-  //   : await web3.eth.ens.getAddress(to);
-  // if (!web3.utils.isAddress(beneficiaryAddress)) {
-  //   throw new Error('Beneficiary is not a valid address');
-  // }
-  console.log('START1');
   const registryContract = new web3.eth.Contract(
     contractABI,
     await contractAddress()
   );
-  console.log('START2');
+
   // await (window as any).ethereum.enable();
   // const accounts = await web3.eth.getAccounts();
   const accounts = await (window as any).ethereum.send('eth_accounts');
   console.log(web3.version);
   console.log('ADDRESS', accounts);
-  await registryContract.methods.offsetCarbonFootprint(to).send({
-    from: '0xDD855Cf04253B58f084Dfb96f6d05C4dB64069D2', //accounts[0],
-    value: web3.utils.toWei(ethAmount.toString(), 'ether')
-  });
+  const receipt = await registryContract.methods
+    .offsetCarbonFootprint(to)
+    .send({
+      from: '0xDD855Cf04253B58f084Dfb96f6d05C4dB64069D2', //accounts[0],
+      value: web3.utils.toWei(ethAmount.toString(), 'ether')
+    });
+  console.log(receipt);
+  const tonnes = web3.utils.fromWei(
+    receipt.events.GuiltAlleviated.returnValues._tonnes as string,
+    'ether'
+  );
+  const gas = receipt.events.GuiltAlleviated.returnValues._tonnes;
+  return {
+    aquiredTokens: tonnes,
+    offsettedCarbon: web3.utils.fromWei(gas, 'ether')
+  };
 };
 
 const registryABI = [
+  {
+    constant: true,
+    inputs: [
+      {
+        name: '',
+        type: 'uint256'
+      }
+    ],
+    name: 'ensIndex',
+    outputs: [
+      {
+        name: '',
+        type: 'bytes32'
+      }
+    ],
+    payable: false,
+    stateMutability: 'view',
+    type: 'function'
+  },
   {
     constant: false,
     inputs: [],
@@ -268,6 +311,37 @@ const registryABI = [
     outputs: [],
     payable: false,
     stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    constant: true,
+    inputs: [
+      {
+        name: '',
+        type: 'bytes32'
+      }
+    ],
+    name: 'registry',
+    outputs: [
+      {
+        name: 'name',
+        type: 'bytes32'
+      },
+      {
+        name: 'wallet',
+        type: 'address'
+      },
+      {
+        name: 'giftPrice',
+        type: 'uint256'
+      },
+      {
+        name: 'exists',
+        type: 'bool'
+      }
+    ],
+    payable: false,
+    stateMutability: 'view',
     type: 'function'
   },
   {
@@ -362,8 +436,8 @@ const registryABI = [
         type: 'address'
       },
       {
-        name: '_rateApiUrl',
-        type: 'bytes32'
+        name: '_giftPrice',
+        type: 'uint256'
       }
     ],
     name: 'addBeneficiary',
@@ -391,6 +465,10 @@ const registryABI = [
         type: 'address'
       },
       {
+        name: '_giftPrice',
+        type: 'uint256'
+      },
+      {
         name: '_exists',
         type: 'bool'
       }
@@ -413,31 +491,16 @@ const registryABI = [
         type: 'address[]'
       },
       {
+        name: '_giftPrices',
+        type: 'uint256[]'
+      },
+      {
         name: '_ensAddresses',
         type: 'bytes32[]'
       }
     ],
     payable: false,
     stateMutability: 'view',
-    type: 'function'
-  },
-  {
-    constant: true,
-    inputs: [
-      {
-        name: '_ens',
-        type: 'bytes32'
-      }
-    ],
-    name: 'getRate',
-    outputs: [
-      {
-        name: '_rate',
-        type: 'uint256'
-      }
-    ],
-    payable: false,
-    stateMutability: 'pure',
     type: 'function'
   }
 ];
@@ -457,18 +520,17 @@ export const getBenneficiaries = async () => {
     beneficiaryContractAddress
   );
   //console.log(registryContract);
+  const ensName = await registryContract.methods.ensIndex(0).call();
   const beneficiary = await registryContract.methods
-    .getBeneficiary(
-      '0x7361766565617274682e6f726700000000000000000000000000000000000000'
-    )
+    .getBeneficiary(ensName)
     .call();
+  console.log(beneficiary);
   return [
     {
       name: web3.utils.hexToUtf8(beneficiary[0]),
       wallet: beneficiary[1],
-      ens: web3.utils.hexToUtf8(
-        '0x7361766565617274682e6f726700000000000000000000000000000000000000'
-      )
+      rate: web3.utils.fromWei(beneficiary[2], 'ether'),
+      ens: ensName
     }
   ];
 };
