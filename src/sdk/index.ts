@@ -1,9 +1,9 @@
 import BN from 'bignumber.js';
 // import { web3 } from './web3';
-import { eth } from './web3';
+
 import { AbiItem } from 'web3-utils';
 
-// const web3 = (window as any).web3;
+const web3 = (window as any).web3;
 
 async function contractAddress() {
   return '0x05b3d197670C6725597f0D424e1037412B745718';
@@ -235,28 +235,28 @@ const contractABI: AbiItem[] = [
 ];
 
 export const offsetCarbonFootprint = async (to: string, ethAmount: string) => {
-  // console.log('START');
-  // // const beneficiaryAddress = to.startsWith('0x')
-  // //   ? to
-  // //   : await web3.eth.ens.getAddress(to);
-  // // if (!web3.utils.isAddress(beneficiaryAddress)) {
-  // //   throw new Error('Beneficiary is not a valid address');
-  // // }
-  // console.log('START1');
-  // const registryContract = new web3.eth.Contract(
-  //   contractABI,
-  //   await contractAddress()
-  // );
-  // console.log('START2');
-  // // await (window as any).ethereum.enable();
-  // // const accounts = await web3.eth.getAccounts();
-  // const accounts = await (window as any).ethereum.send('eth_accounts');
-  // console.log(web3.version);
-  // console.log('ADDRESS', accounts);
-  // await registryContract.methods.offsetCarbonFootprint(to).send({
-  //   from: accounts[0],
-  //   value: web3.utils.toWei(ethAmount.toString())
-  // });
+  console.log('START');
+  // const beneficiaryAddress = to.startsWith('0x')
+  //   ? to
+  //   : await web3.eth.ens.getAddress(to);
+  // if (!web3.utils.isAddress(beneficiaryAddress)) {
+  //   throw new Error('Beneficiary is not a valid address');
+  // }
+  console.log('START1');
+  const registryContract = new web3.eth.Contract(
+    contractABI,
+    await contractAddress()
+  );
+  console.log('START2');
+  // await (window as any).ethereum.enable();
+  // const accounts = await web3.eth.getAccounts();
+  const accounts = await (window as any).ethereum.send('eth_accounts');
+  console.log(web3.version);
+  console.log('ADDRESS', accounts);
+  await registryContract.methods.offsetCarbonFootprint(to).send({
+    from: accounts[0],
+    value: web3.utils.toWei(ethAmount.toString())
+  });
 };
 
 const registryABI: AbiItem[] = [
@@ -442,20 +442,24 @@ const registryABI: AbiItem[] = [
 ];
 
 export const getBenneficiaries = async () => {
-  const offsetContract = new eth.contract(contractABI).at(
+  const offsetContract = new web3.eth.contract(
+    contractABI,
     await contractAddress()
   );
-  const beneficiaryContractAddress = await offsetContract.registry();
-  const registryContract = new eth.contract(contractABI).at(
+  const beneficiaryContractAddress = await offsetContract.methods
+    .registry()
+    .call();
+  const registryContract = new web3.eth.contract(
+    registryABI,
     beneficiaryContractAddress
   );
-  const allBeneficiaries = await registryContract.getAllBeneficiaries();
+  const allBeneficiaries = await registryContract.methods.getAllBeneficiaries.call();
   let result = [];
   for (let i = 0; i < allBeneficiaries[0].length; i++) {
     result.push({
-      name: eth.toUtf8(allBeneficiaries[i][0]),
+      name: web3.utils.hexToUtf8(allBeneficiaries[i][0]),
       wallet: allBeneficiaries[i][1],
-      ens: eth.toUtf8(allBeneficiaries[i][2])
+      ens: web3.utils.hexToUtf8(allBeneficiaries[i][2])
     });
   }
   return result;
