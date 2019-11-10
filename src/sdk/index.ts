@@ -262,14 +262,14 @@ export const offsetCarbonFootprint = async (to: string, ethAmount: string) => {
   );
 
   // await (window as any).ethereum.enable();
-  // const accounts = await web3.eth.getAccounts();
-  const accounts = await (window as any).ethereum.send('eth_accounts');
+  const accounts = await web3.eth.getAccounts();
+  // const accounts = await (window as any).ethereum.send('eth_accounts');
   console.log(web3.version);
   console.log('ADDRESS', accounts);
   const receipt = await registryContract.methods
     .offsetCarbonFootprint(to)
     .send({
-      from: '0xDD855Cf04253B58f084Dfb96f6d05C4dB64069D2', //accounts[0],
+      from: accounts[0],
       value: web3.utils.toWei(ethAmount.toString(), 'ether')
     });
   console.log(receipt);
